@@ -15,7 +15,6 @@ interface Message {
   audioMessage: { caption: string } | undefined;
 }
 
-
 export const createInstancia = async (name: string) => {
   try {
     const url = `${BASE_URL}/instance/create`;
@@ -23,28 +22,24 @@ export const createInstancia = async (name: string) => {
       instanceName: name,
     };
 
-    const result = await axios.post(url, JSON.stringify(data), {
+    await axios.post(url, JSON.stringify(data), {
       headers: {
         'apikey': API_KEY,
         'Content-Type': 'application/json'
       },
     });
 
-    
-
     const connect = await connectInstancia(name);
-
-    console.log(connect)
     return connect;
   } catch (error) {
-    console.log(error);
+    throw new Error(error);
   }
 }
 
 export const connectInstancia = async (name: string) => {
   try {
     const url = `${BASE_URL}/instance/connect/${name}`;
-  
+
     const result = await axios.get(url, {
       headers: {
         'apikey': API_KEY,
@@ -54,7 +49,7 @@ export const connectInstancia = async (name: string) => {
 
     return result;
   } catch (error) {
-    console.log(error);
+    throw new Error(error);
   }
 }
 

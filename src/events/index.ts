@@ -35,7 +35,6 @@ export const eventChatWoot = async (body: any) => {
 
     if (command === "iniciar") {
       await createInstancia(body.inbox.name);
-      console.log(`Criar Instancia e Gerar QRCode para o inbox ${body.inbox.name}`);
     }
   }
 
@@ -91,8 +90,6 @@ export const eventCodeChat = async (body: any) => {
   }
 
   if (body.event === "qrcode.updated") {
-    console.log("qrcode.updated");
-
     if (body.data.statusCode === 500) {
       const erroQRcode =
         "Limite de QRCode atingido, se deseja gerar um novo QRCode, digite o comando /iniciar";

@@ -84,7 +84,7 @@ export const createConversation = async (body: any) => {
     return conversation;
 
   } catch (error) {
-    console.log(`error`, error);
+    throw new Error(error);
   }
 };
 
