@@ -26,7 +26,7 @@ export const eventChatWoot = async (body: any) => {
   //   inboxId: body.inbox.id,
   // }
 
-  // if (!body?.conversation) return { message: 'bot' };
+  if (!body?.conversation) return { message: 'bot' };
   const chatId = body.conversation.meta.sender.phone_number.replace('+', '');
 
   const messageReceived = body.content;
@@ -90,7 +90,8 @@ export const eventCodeChat = async (body: any) => {
 
       const getConversion = await createConversation(body);
 
-      if (!getConversion || !getConversion.id) {
+      if (!getConversion) {
+        console.log("🚨 Erro ao criar conversa");
         return;
       }
 
@@ -111,13 +112,13 @@ export const eventCodeChat = async (body: any) => {
           },
         ];
         return await createMessage(
-          getConversion.id,
+          getConversion,
           bodyMessage,
           "incoming",
           attachments
         );
       } else {
-        return await createMessage(getConversion.id, bodyMessage, "incoming");
+        return await createMessage(getConversion, bodyMessage, "incoming");
       }
     }
 

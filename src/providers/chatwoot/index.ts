@@ -64,15 +64,16 @@ export const createConversation = async (body: any) => {
 
     const contactId = contact.id || contact.payload.contact.id;
 
-    const findConversation = await client.conversations.list({
+    const contactConversations = await client.contacts.listConversations({
       accountId: +ACCOUNT_ID,
-      inboxId: filterInbox.id,
-    });
-
-    const getOpen = findConversation.data.payload.find((conversation) => conversation?.meta?.sender?.id === contactId && conversation.status === "open");
-
-    if (getOpen) {
-      return getOpen;
+      id: contactId
+    }) as any;
+    
+    if (contactConversations) {
+      const conversation = contactConversations.payload.find(conversation => conversation.status !== "resolved");
+      if (conversation) {
+        return conversation.id;
+      }
     }
 
     const conversation = await client.conversations.create({
@@ -83,9 +84,10 @@ export const createConversation = async (body: any) => {
       },
     });
 
-    return conversation;
+    return conversation.id;
 
   } catch (error) {
+    console.log(error)
     throw new Error(error);
   }
 };
