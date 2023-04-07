@@ -1,4 +1,4 @@
-# chatwoot-codechat
+# ChatWoot + CodeChat
 
 Crie um arquivo .env de backend e preencha com as informações correta:
 
