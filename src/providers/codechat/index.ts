@@ -32,6 +32,7 @@ export const createInstancia = async (name: string) => {
     const connect = await connectInstancia(name);
     return connect;
   } catch (error) {
+    // console.log(error)
     throw new Error(error);
   }
 }
@@ -49,13 +50,51 @@ export const connectInstancia = async (name: string) => {
 
     return result;
   } catch (error) {
+    // console.log(error)
     throw new Error(error);
   }
 }
 
-export const sendText = async (message: string, number: string) => {
+export const logoutInstancia = async (name: string) => {
   try {
-    const url = `${BASE_URL}/message/sendText/chatwoot`;
+    const url = `${BASE_URL}/instance/logout/${name}`;
+
+    const result = await axios.delete(url, {
+      headers: {
+        'apikey': API_KEY,
+      },
+    });
+
+    return result;
+  } catch (error) {
+    // console.log(error)
+    throw new Error(error);
+  }
+}
+
+export const statusInstancia = async (name: string) => {
+  try {
+    const url = `${BASE_URL}/instance/connectionState/${name}`;
+
+    const result = await axios.get(url, {
+      headers: {
+        'apikey': API_KEY,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    return result;
+
+  } catch (error) {
+    // console.log(error)
+    throw new Error(error);
+  }
+
+}
+
+export const sendText = async (message: string, number: string, instancia: string) => {
+  try {
+    const url = `${BASE_URL}/message/sendText/${instancia}`;
     const data = {
       "number": number,
       "options": {
@@ -76,11 +115,12 @@ export const sendText = async (message: string, number: string) => {
     return result;
   }
   catch (error) {
+    // console.log(error)
     throw new Error(error);
   }
 };
 
-export const sendAttachment = async (number: string, media: any, caption?: string) => {
+export const sendAttachment = async (number: string, media: any, instancia: string, caption?: string) => {
   try {
     const parts = media.split("/");
     const fileName = decodeURIComponent(parts[parts.length - 1]);
@@ -104,7 +144,7 @@ export const sendAttachment = async (number: string, media: any, caption?: strin
         break;
     }
 
-    const url = type === "audio" ? `${BASE_URL}/message/sendWhatsAppAudio/chatwoot` : `${BASE_URL}/message/sendMedia/chatwoot`;
+    const url = type === "audio" ? `${BASE_URL}/message/sendWhatsAppAudio/${instancia}` : `${BASE_URL}/message/sendMedia/${instancia}`;
 
     const data = type === "audio" ? {
       "number": number,
@@ -138,9 +178,9 @@ export const sendAttachment = async (number: string, media: any, caption?: strin
   }
 };
 
-export const getBase64FromMediaMessage = async (id: string) => {
+export const getBase64FromMediaMessage = async (id: string, instancia: string) => {
   try {
-    const url = `${BASE_URL}/chat/getBase64FromMediaMessage/chatwoot`;
+    const url = `${BASE_URL}/chat/getBase64FromMediaMessage/${instancia}`;
     const data = {
       "key": {
         "id": id

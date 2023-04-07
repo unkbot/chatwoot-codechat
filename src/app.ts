@@ -1,4 +1,4 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express, Request, Response, json, urlencoded } from 'express';
 import dotenv from 'dotenv';
 import { eventCodeChat, eventChatWoot } from './events';
 
@@ -7,7 +7,10 @@ dotenv.config();
 const app: Express = express();
 const port = process.env.PORT;
 
-app.use(express.json());
+app.use(
+  urlencoded({ extended: true, limit: '50mb' }),
+  json({ limit: '50mb' }),
+);
 
 app.post('/webhook/:provider', async (req: Request, res: Response) => {
   const provider = req.params.provider;
