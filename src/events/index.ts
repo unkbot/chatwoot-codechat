@@ -20,15 +20,10 @@ import {
 
 export const eventChatWoot = async (body: any) => {
 
-  //teste
-
-
-  const ids = {
-    accountId: body.id,
-    inboxId: body.inbox.id,
-  }
-
-
+  // const ids = {
+  //   accountId: body.id,
+  //   inboxId: body.inbox.id,
+  // }
 
   if (!body?.conversation) return { message: 'bot' };
   const chatId = body.conversation.meta.sender.phone_number.replace('+', '');
@@ -38,7 +33,12 @@ export const eventChatWoot = async (body: any) => {
     const command = messageReceived.replace("/", "");
 
     if (command === "iniciar") {
-      await createInstancia(body.inbox.name);
+      const status = await statusInstancia(body.inbox.name);
+      if(status.data.state !== "open") {
+        await createInstancia(body.inbox.name);
+      }else {
+        await createBotMessage(`🚨 Instância ${body.inbox.name} já está conectada.`, "incoming", body.data.instancia);
+      }
     }
 
     if (command === "status") {
