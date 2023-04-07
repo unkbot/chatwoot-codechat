@@ -17,9 +17,9 @@ import {
   logoutInstancia,
   statusInstancia
 } from "../providers/codechat"
+import { TOSIGN } from "../config";
 
 export const eventChatWoot = async (body: any) => {
-
 
   // const ids = {
   //   accountId: body.id,
@@ -38,7 +38,6 @@ export const eventChatWoot = async (body: any) => {
 
       try {
         const status = await statusInstancia(body.inbox.name);
-        console.log(status)
         if (status.data.state !== "open") {
           await createInstancia(body.inbox.name);
         } else {
@@ -69,13 +68,18 @@ export const eventChatWoot = async (body: any) => {
 
 
   if (body.message_type === 'outgoing' && body?.conversation?.messages?.length && chatId !== '123456') {
+
+    const senderName = body.sender.name
+
+    const formatText = TOSIGN ? `*${senderName}*: ${messageReceived}` : messageReceived;
+
     for (const message of body.conversation.messages) {
       if (message.attachments && message.attachments.length > 0) {
         for (const attachment of message.attachments) {
-          sendAttachment(chatId, attachment.data_url, messageReceived, body.inbox.name);
+          sendAttachment(chatId, attachment.data_url, formatText, body.inbox.name);
         }
       } else {
-        sendText(messageReceived, chatId, body.inbox.name);
+        sendText(formatText, chatId, body.inbox.name);
       }
     }
   }
