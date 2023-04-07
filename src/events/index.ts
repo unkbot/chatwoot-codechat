@@ -76,7 +76,14 @@ export const eventChatWoot = async (body: any) => {
     for (const message of body.conversation.messages) {
       if (message.attachments && message.attachments.length > 0) {
         for (const attachment of message.attachments) {
-          sendAttachment(chatId, attachment.data_url, formatText, body.inbox.name);
+          console.log(attachment)
+          //number: string, media: any, instancia: string, caption?: string
+          sendAttachment(
+            chatId,
+            attachment.data_url,
+            body.inbox.name,
+            formatText
+          );
         }
       } else {
         sendText(formatText, chatId, body.inbox.name);
