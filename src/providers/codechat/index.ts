@@ -1,8 +1,6 @@
 import axios from 'axios';
 import mimeTypes from "mime-types";
-
-const API_KEY = 't8OOEeISKzpmc3jjcMqBWYSaJsafdefer';
-const BASE_URL = 'http://localhost:8081';
+import { CODECHAT_API_KEY, CODECHAT_BASE_URL } from '../../config';
 
 interface Message {
   conversation: string;
@@ -17,14 +15,14 @@ interface Message {
 
 export const createInstancia = async (name: string) => {
   try {
-    const url = `${BASE_URL}/instance/create`;
+    const url = `${CODECHAT_BASE_URL}/instance/create`;
     const data = {
       instanceName: name,
     };
 
     await axios.post(url, JSON.stringify(data), {
       headers: {
-        'apikey': API_KEY,
+        'apikey': CODECHAT_API_KEY,
         'Content-Type': 'application/json'
       },
     });
@@ -38,11 +36,11 @@ export const createInstancia = async (name: string) => {
 
 export const connectInstancia = async (name: string) => {
   try {
-    const url = `${BASE_URL}/instance/connect/${name}`;
+    const url = `${CODECHAT_BASE_URL}/instance/connect/${name}`;
 
     const result = await axios.get(url, {
       headers: {
-        'apikey': API_KEY,
+        'apikey': CODECHAT_API_KEY,
         'Content-Type': 'application/json'
       },
     });
@@ -55,11 +53,11 @@ export const connectInstancia = async (name: string) => {
 
 export const logoutInstancia = async (name: string) => {
   try {
-    const url = `${BASE_URL}/instance/logout/${name}`;
+    const url = `${CODECHAT_BASE_URL}/instance/logout/${name}`;
 
     const result = await axios.delete(url, {
       headers: {
-        'apikey': API_KEY,
+        'apikey': CODECHAT_API_KEY,
       },
     });
 
@@ -71,11 +69,11 @@ export const logoutInstancia = async (name: string) => {
 
 export const statusInstancia = async (name: string) => {
   try {
-    const url = `${BASE_URL}/instance/connectionState/${name}`;
+    const url = `${CODECHAT_BASE_URL}/instance/connectionState/${name}`;
 
     const result = await axios.get(url, {
       headers: {
-        'apikey': API_KEY,
+        'apikey': CODECHAT_API_KEY,
         'Content-Type': 'application/json'
       },
     });
@@ -90,7 +88,7 @@ export const statusInstancia = async (name: string) => {
 
 export const sendText = async (message: string, number: string, instancia: string) => {
   try {
-    const url = `${BASE_URL}/message/sendText/${instancia}`;
+    const url = `${CODECHAT_BASE_URL}/message/sendText/${instancia}`;
     const data = {
       "number": number,
       "options": {
@@ -103,7 +101,7 @@ export const sendText = async (message: string, number: string, instancia: strin
 
     const result = await axios.post(url, JSON.stringify(data), {
       headers: {
-        'apikey': API_KEY,
+        'apikey': CODECHAT_API_KEY,
         'Content-Type': 'application/json'
       },
     });
@@ -139,7 +137,7 @@ export const sendAttachment = async (number: string, media: any, instancia: stri
         break;
     }
 
-    const url = type === "audio" ? `${BASE_URL}/message/sendWhatsAppAudio/${instancia}` : `${BASE_URL}/message/sendMedia/${instancia}`;
+    const url = type === "audio" ? `${CODECHAT_BASE_URL}/message/sendWhatsAppAudio/${instancia}` : `${CODECHAT_BASE_URL}/message/sendMedia/${instancia}`;
 
     const data = type === "audio" ? {
       "number": number,
@@ -161,7 +159,7 @@ export const sendAttachment = async (number: string, media: any, instancia: stri
 
     const result = await axios.post(url, JSON.stringify(data), {
       headers: {
-        'apikey': API_KEY,
+        'apikey': CODECHAT_API_KEY,
         'Content-Type': 'application/json'
       },
     });
@@ -175,7 +173,7 @@ export const sendAttachment = async (number: string, media: any, instancia: stri
 
 export const getBase64FromMediaMessage = async (id: string, instancia: string) => {
   try {
-    const url = `${BASE_URL}/chat/getBase64FromMediaMessage/${instancia}`;
+    const url = `${CODECHAT_BASE_URL}/chat/getBase64FromMediaMessage/${instancia}`;
     const data = {
       "key": {
         "id": id
@@ -184,7 +182,7 @@ export const getBase64FromMediaMessage = async (id: string, instancia: string) =
 
     const result = await axios.post(url, JSON.stringify(data), {
       headers: {
-        'apikey': API_KEY,
+        'apikey': CODECHAT_API_KEY,
         'Content-Type': 'application/json'
       },
     });

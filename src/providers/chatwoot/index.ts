@@ -1,12 +1,14 @@
 import ChatwootClient from "@figuro/chatwoot-sdk";
+import { CHATWOOT_ACCOUNT_ID, CHATWOOT_BASE_URL, CHATWOOT_TOKEN } from "../../config";
 
-const ACCOUNT_ID = 76598;
+const ACCOUNT_ID = CHATWOOT_ACCOUNT_ID;
+
 const client = new ChatwootClient({
   config: {
-    basePath: "https://app.chatwoot.com",
+    basePath: CHATWOOT_BASE_URL,
     with_credentials: true,
     credentials: "include",
-    token: "LrN39bkVbbFRr5H3WBQUzRf3",
+    token: CHATWOOT_TOKEN,
   }
 });
 
@@ -63,7 +65,7 @@ export const createConversation = async (body: any) => {
     const contactId = contact.id || contact.payload.contact.id;
 
     const findConversation = await client.conversations.list({
-      accountId: ACCOUNT_ID,
+      accountId: +ACCOUNT_ID,
       inboxId: filterInbox.id,
     });
 
@@ -126,7 +128,7 @@ export const createBotMessage = async (content: string, messageType: "incoming" 
   const filterInbox = await getInbox(instancia);
 
   const findConversation = await client.conversations.list({
-    accountId: ACCOUNT_ID,
+    accountId: +ACCOUNT_ID,
     inboxId: filterInbox.id,
   });
   const conversation = findConversation.data.payload.find((conversation) => conversation?.meta?.sender?.id === contact.id && conversation.status === "open");
