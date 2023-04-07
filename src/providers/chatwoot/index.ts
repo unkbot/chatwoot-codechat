@@ -56,7 +56,6 @@ export const createConversation = async (body: any) => {
     const chatId = body.data.key.remoteJid.split("@")[0];
     const nameContact = body.data.pushName;
 
-    console.log(body)
     const filterInbox = await getInbox(body.instance);
 
     const contact = await findContact(chatId) || await createContact(chatId, filterInbox.id, nameContact) as any;
@@ -67,6 +66,7 @@ export const createConversation = async (body: any) => {
       accountId: ACCOUNT_ID,
       inboxId: filterInbox.id,
     });
+
     const getOpen = findConversation.data.payload.find((conversation) => conversation?.meta?.sender?.id === contactId && conversation.status === "open");
 
     if (getOpen) {
@@ -84,7 +84,6 @@ export const createConversation = async (body: any) => {
     return conversation;
 
   } catch (error) {
-    console.log(error)
     throw new Error(error);
   }
 };

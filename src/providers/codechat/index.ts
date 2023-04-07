@@ -32,7 +32,6 @@ export const createInstancia = async (name: string) => {
     const connect = await connectInstancia(name);
     return connect;
   } catch (error) {
-    // console.log(error)
     throw new Error(error);
   }
 }
@@ -50,7 +49,6 @@ export const connectInstancia = async (name: string) => {
 
     return result;
   } catch (error) {
-    // console.log(error)
     throw new Error(error);
   }
 }
@@ -67,7 +65,6 @@ export const logoutInstancia = async (name: string) => {
 
     return result;
   } catch (error) {
-    // console.log(error)
     throw new Error(error);
   }
 }
@@ -86,7 +83,6 @@ export const statusInstancia = async (name: string) => {
     return result;
 
   } catch (error) {
-    // console.log(error)
     throw new Error(error);
   }
 
@@ -115,7 +111,6 @@ export const sendText = async (message: string, number: string, instancia: strin
     return result;
   }
   catch (error) {
-    // console.log(error)
     throw new Error(error);
   }
 };

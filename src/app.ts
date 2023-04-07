@@ -13,17 +13,21 @@ app.use(
 );
 
 app.post('/webhook/:provider', async (req: Request, res: Response) => {
-  const provider = req.params.provider;
-  let result = null;
-  if (provider === 'chatwoot') {
-    result = await eventChatWoot(req.body);
-  }
+  try {
+    const provider = req.params.provider;
+    let result = null;
+    if (provider === 'chatwoot') {
+      result = await eventChatWoot(req.body);
+    }
 
-  if (provider === 'codechat') {
-    result = await eventCodeChat(req.body);
-  }
+    if (provider === 'codechat') {
+      result = await eventCodeChat(req.body);
+    }
 
-  res.json({ message: 'ok', result });
+    res.json({ message: 'ok', result });
+  } catch (error) {
+    res.json({ message: 'error', error });
+  }
 });
 
 app.listen(port, () => {
