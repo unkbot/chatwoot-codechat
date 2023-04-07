@@ -65,19 +65,24 @@ export const eventChatWoot = async (body: any) => {
       await logoutInstancia(body.inbox.name);
     }
   }
+  
+  if (body.message_type === 'outgoing'   && body?.conversation?.messages?.length && chatId !== '123456') {
 
+    const senderName = body?.sender?.name;
 
-  if (body.message_type === 'outgoing' && body?.conversation?.messages?.length && chatId !== '123456') {
-
-    const senderName = body.sender.name
-
-    const formatText = TOSIGN ? `*${senderName}*: ${messageReceived}` : messageReceived;
+    let formatText: string
+    if (senderName === null || senderName === undefined) {
+      formatText = messageReceived;
+    } else {
+      formatText = TOSIGN ? `*${senderName}*: ${messageReceived}` : messageReceived;
+    }
 
     for (const message of body.conversation.messages) {
+
       if (message.attachments && message.attachments.length > 0) {
+
         for (const attachment of message.attachments) {
           console.log(attachment)
-          //number: string, media: any, instancia: string, caption?: string
           sendAttachment(
             chatId,
             attachment.data_url,
@@ -86,6 +91,7 @@ export const eventChatWoot = async (body: any) => {
           );
         }
       } else {
+        console.log(`aquiii`)
         sendText(formatText, chatId, body.inbox.name);
       }
     }
