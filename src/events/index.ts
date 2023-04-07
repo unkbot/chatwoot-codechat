@@ -20,25 +20,35 @@ import {
 
 export const eventChatWoot = async (body: any) => {
 
+
   // const ids = {
   //   accountId: body.id,
   //   inboxId: body.inbox.id,
   // }
 
-  if (!body?.conversation) return { message: 'bot' };
+  // if (!body?.conversation) return { message: 'bot' };
   const chatId = body.conversation.meta.sender.phone_number.replace('+', '');
+
   const messageReceived = body.content;
 
   if (chatId === '123456' && body.message_type === 'outgoing') {
     const command = messageReceived.replace("/", "");
-
     if (command === "iniciar") {
-      const status = await statusInstancia(body.inbox.name);
-      if(status.data.state !== "open") {
-        await createInstancia(body.inbox.name);
-      }else {
-        await createBotMessage(`🚨 Instância ${body.inbox.name} já está conectada.`, "incoming", body.data.instancia);
+      console.log(`Comando recebido: ${command}`)
+
+      try {
+        const status = await statusInstancia(body.inbox.name);
+        console.log(status)
+        if (status.data.state !== "open") {
+          await createInstancia(body.inbox.name);
+        } else {
+          await createBotMessage(`🚨 Instância ${body.inbox.name} já está conectada.`, "incoming", body.inbox.name);
+        }
       }
+      catch (error) {
+        await createInstancia(body.inbox.name);
+      }
+
     }
 
     if (command === "status") {
@@ -46,13 +56,13 @@ export const eventChatWoot = async (body: any) => {
 
       const status = await statusInstancia(body.inbox.name);
 
-      await createBotMessage(`⚠️ Status da instância ${body.inbox.name}: *${status.data.state}*`, "incoming", body.data.instancia);
+      await createBotMessage(`⚠️ Status da instância ${body.inbox.name}: *${status.data.state}*`, "incoming", body.inbox.name);
     }
 
     if (command === "desconectar") {
       console.log(`Desconectando Whatsap ${body.inbox.name}: `)
       const msgLogout = `🚨 Desconectando Whatsap da caixa de entrada *${body.inbox.name}*: `;
-      await createBotMessage(msgLogout, "incoming", body.data.instancia);
+      await createBotMessage(msgLogout, "incoming", body.inbox.name);
       await logoutInstancia(body.inbox.name);
     }
   }
