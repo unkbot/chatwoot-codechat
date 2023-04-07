@@ -26,3 +26,17 @@ https://codewoot.seudominio.com.br/webhook/chatwoot
 
 
 No CODECHAT, você precisa usar o webhook global ele por padrão vem desabilitado no env.yml
+
+**Manual do Bot**
+
+Contato do Bot: +123456
+
+Comandos Disponíveis:
+
+- `/iniciar` Este comando irá criar uma nova instância e gerar um QR code para você escanear com o WhatsApp. Você poderá conectar-se à instância e começar a usar o bot.
+
+- `/status` Este comando irá verificar o status da instância e retornar informações atualizadas sobre o estado da conexão.
+
+- `/desconectar` Este comando irá desconectar o WhatsApp da instância, encerrando a conexão.
+
+
