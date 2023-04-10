@@ -221,7 +221,8 @@ export const getTypeMessage = (msg: Message) => {
     messageContextInfo: msg.messageContextInfo?.stanzaId,
     stickerMessage: msg.stickerMessage?.fileSha256.toString("base64"),
     documentMessage: msg.documentMessage?.caption,
-    audioMessage: msg.audioMessage?.caption
+    audioMessage: msg.audioMessage?.caption,
+    
   };
 
   return types;
