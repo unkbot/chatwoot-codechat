@@ -4,7 +4,6 @@ services:
 
   api:
     build: .
-    image: ricardoapaes/chatwoot-codechat:latest
     ports:
       - ${PORT:-1234}:8080
     environment:
