@@ -66,13 +66,11 @@ export const eventChatWoot = async (body: any) => {
   }
   
   if (body.message_type === 'outgoing' && body?.conversation?.messages?.length && chatId !== '123456') {
-    if( messages_sent.includes(body.id) ) {
+    if( IMPORT_MESSAGES_SENT && messages_sent.includes(body.id) ) {
       console.log(`🚨 Não importar mensagens enviadas, ficaria duplicado.`);
 
       const indexMessage = messages_sent.indexOf(body.id);
       messages_sent.splice(indexMessage, 1);
-
-      console.log('messages sent', messages_sent);
 
       return { message: 'bot' };
     }
