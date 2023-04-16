@@ -98,6 +98,8 @@ export const eventCodeChat = async (body: any) => {
   try {
     const instance = body.instance;
 
+    console.log(`🎉 Evento recebido de ${instance}`, body);
+
     if (body.event === "messages.upsert" && !body.data.key.fromMe) {
       const getConversion = await createConversation(body);
 
