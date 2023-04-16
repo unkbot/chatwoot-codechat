@@ -17,7 +17,7 @@ import {
   logoutInstancia,
   statusInstancia
 } from "../providers/codechat"
-import { TOSIGN } from "../config";
+import { IMPORT_MESSAGES_SENT, TOSIGN } from "../config";
 
 export const eventChatWoot = async (body: any) => {
 
@@ -100,8 +100,13 @@ export const eventCodeChat = async (body: any) => {
 
     console.log(`🎉 Evento recebido de ${instance}`, body);
 
-    if (body.event === "messages.upsert" && !body.data.key.fromMe) {
+    if (body.event === "messages.upsert") {
+      if(body.data.key.fromMe && !IMPORT_MESSAGES_SENT) {
+        return;
+      }
+
       const getConversion = await createConversation(body);
+      const messageType = body.data.key.fromMe ? 'outgoing' : 'incoming';
 
       if (!getConversion) {
         console.log("🚨 Erro ao criar conversa");
@@ -130,11 +135,11 @@ export const eventCodeChat = async (body: any) => {
         return await createMessage(
           getConversion,
           bodyMessage,
-          "incoming",
+          messageType,
           attachments
         );
       } else {
-        return await createMessage(getConversion, bodyMessage, "incoming");
+        return await createMessage(getConversion, bodyMessage, messageType);
       }
     }
 
