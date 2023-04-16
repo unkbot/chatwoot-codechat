@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+
+  api:
+    build: .
+    ports:
+      - ${PORT:-1234}:8080
+    environment:
+      - PORT=8080
+      - CHATWOOT_ACCOUNT_ID=${CHATWOOT_ACCOUNT_ID} 
+      - CHATWOOT_TOKEN=${CHATWOOT_TOKEN} 
+      - CHATWOOT_BASE_URL=${CHATWOOT_BASE_URL} 
+      - CODECHAT_BASE_URL=${CODECHAT_BASE_URL}
+      - CODECHAT_API_KEY=${CODECHAT_API_KEY:-t8OOEeISKzpmc3jjcMqBWYSaJsafdefer}
+      - TOSIGN=${TOSIGN:-false}

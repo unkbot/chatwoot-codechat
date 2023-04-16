@@ -2,7 +2,7 @@
 
 ## Deploy Ubuntu 22.x
 
-NodeJS 16x 
+NodeJS 16x
 
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
@@ -11,7 +11,7 @@ node -v
 npm -v
 ```
 
-Clone 
+Clone
 
 ```bash
 git clone git@github.com:w3nder/chatwoot-codechat.git
@@ -35,6 +35,7 @@ pm2 start dist/app.js --name chatwoot-codechat
 ```
 
 Crie o proxy para integração
+
 ```bash
 sudo nano /etc/nginx/sites-available/chatwoot-codechat
 ```
@@ -105,4 +106,17 @@ Comandos Disponíveis:
 
 - `/desconectar` Este comando irá desconectar o WhatsApp da instância, encerrando a conexão.
 
+## Deploy Docker
 
+Para fazer o deploy usando docker siga os passos abaixo:
+
+```bash
+cd chatwoot-codechat
+cp env.example .env
+nano .env
+docker compose up -d --build
+```
+
+O servidor irá estará rodando na porta escolhida na variável `PORT`.
+
+Para configurar o nginx siga as instruções do Deploy normal.

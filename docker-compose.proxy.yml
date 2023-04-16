@@ -1,0 +1,15 @@
+version: '3.5'
+
+networks:
+    nginx-proxy:
+        name: nginx-proxy
+        driver: bridge
+
+services:
+
+  api:
+    environment: 
+      - VIRTUAL_HOST=${HOST}
+      - LETSENCRYPT_HOST=${HOST}
+    networks:
+      - nginx-proxy
