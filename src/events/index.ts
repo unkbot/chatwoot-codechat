@@ -19,6 +19,8 @@ import {
 } from "../providers/codechat"
 import { IMPORT_MESSAGES_SENT, TOSIGN } from "../config";
 
+const messages_sent = [];
+
 export const eventChatWoot = async (body: any) => {
 
   if (!body?.conversation) return { message: 'bot' };
@@ -30,7 +32,7 @@ export const eventChatWoot = async (body: any) => {
   console.log(`🎉 Evento recebido de ${chatId}`, body);
 
   if (chatId === '123456' && body.message_type === 'outgoing') {
-    const command = messageReceived.replace("/", "");    
+    const command = messageReceived.replace("/", "");
 
     if (command === "iniciar") {
       try {
@@ -64,6 +66,16 @@ export const eventChatWoot = async (body: any) => {
   }
   
   if (body.message_type === 'outgoing' && body?.conversation?.messages?.length && chatId !== '123456') {
+    if( messages_sent.includes(body.id) ) {
+      console.log(`🚨 Não importar mensagens enviadas, ficaria duplicado.`);
+
+      const indexMessage = messages_sent.indexOf(body.id);
+      messages_sent.splice(indexMessage, 1);
+
+      console.log('messages sent', messages_sent);
+
+      return { message: 'bot' };
+    }
 
     let formatText: string;
     if (senderName === null || senderName === undefined) {
@@ -116,6 +128,8 @@ export const eventCodeChat = async (body: any) => {
       const isMedia = isMediaMessage(body.data.message);
       const bodyMessage = getConversationMessage(body.data.message);
 
+      let message;
+
       if (isMedia) {
         const downloadBase64 = await getBase64FromMediaMessage(
           body.data.key.id,
@@ -132,15 +146,19 @@ export const eventCodeChat = async (body: any) => {
             filename: downloadBase64.data?.fileName || nameFile,
           },
         ];
-        return await createMessage(
+        message = await createMessage(
           getConversion,
           bodyMessage,
           messageType,
           attachments
         );
       } else {
-        return await createMessage(getConversion, bodyMessage, messageType);
+        message = await createMessage(getConversion, bodyMessage, messageType);
       }
+
+      messages_sent.push(message.id);
+
+      return message;
     }
 
     if (body.event === "qrcode.updated") {

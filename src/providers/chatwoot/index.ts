@@ -115,8 +115,6 @@ export const createMessage = async (conversationId: number, content: string, mes
     }
   });
 
-  console.log('🚀 created message', message);
-
   return message;
 };
 
