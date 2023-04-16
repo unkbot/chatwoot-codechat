@@ -17,7 +17,9 @@ import {
   logoutInstancia,
   statusInstancia
 } from "../providers/codechat"
-import { TOSIGN } from "../config";
+import { IMPORT_MESSAGES_SENT, TOSIGN } from "../config";
+
+const messages_sent = [];
 
 export const eventChatWoot = async (body: any) => {
 
@@ -27,12 +29,12 @@ export const eventChatWoot = async (body: any) => {
   const messageReceived = body.content;
   const senderName = body?.sender?.name;
 
+  console.log(`🎉 Evento recebido de ${chatId}`, body);
+
   if (chatId === '123456' && body.message_type === 'outgoing') {
     const command = messageReceived.replace("/", "");
 
     if (command === "iniciar") {
-      console.log(`Comando recebido: ${command}`)
-
       try {
         const status = await statusInstancia(body.inbox.name);
         if (status.data.state !== "open") {
@@ -64,6 +66,14 @@ export const eventChatWoot = async (body: any) => {
   }
   
   if (body.message_type === 'outgoing' && body?.conversation?.messages?.length && chatId !== '123456') {
+    if( IMPORT_MESSAGES_SENT && messages_sent.includes(body.id) ) {
+      console.log(`🚨 Não importar mensagens enviadas, ficaria duplicado.`);
+
+      const indexMessage = messages_sent.indexOf(body.id);
+      messages_sent.splice(indexMessage, 1);
+
+      return { message: 'bot' };
+    }
 
     let formatText: string;
     if (senderName === null || senderName === undefined) {
@@ -98,8 +108,15 @@ export const eventCodeChat = async (body: any) => {
   try {
     const instance = body.instance;
 
-    if (body.event === "messages.upsert" && !body.data.key.fromMe) {
+    console.log(`🎉 Evento recebido de ${instance}`, body);
+
+    if (body.event === "messages.upsert") {
+      if(body.data.key.fromMe && !IMPORT_MESSAGES_SENT) {
+        return;
+      }
+
       const getConversion = await createConversation(body);
+      const messageType = body.data.key.fromMe ? 'outgoing' : 'incoming';
 
       if (!getConversion) {
         console.log("🚨 Erro ao criar conversa");
@@ -108,6 +125,8 @@ export const eventCodeChat = async (body: any) => {
 
       const isMedia = isMediaMessage(body.data.message);
       const bodyMessage = getConversationMessage(body.data.message);
+
+      let message;
 
       if (isMedia) {
         const downloadBase64 = await getBase64FromMediaMessage(
@@ -125,15 +144,19 @@ export const eventCodeChat = async (body: any) => {
             filename: downloadBase64.data?.fileName || nameFile,
           },
         ];
-        return await createMessage(
+        message = await createMessage(
           getConversion,
           bodyMessage,
-          "incoming",
+          messageType,
           attachments
         );
       } else {
-        return await createMessage(getConversion, bodyMessage, "incoming");
+        message = await createMessage(getConversion, bodyMessage, messageType);
       }
+
+      messages_sent.push(message.id);
+
+      return message;
     }
 
     if (body.event === "qrcode.updated") {
