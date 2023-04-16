@@ -56,11 +56,17 @@ export const findContact = async (phoneNumber: string) => {
 export const createConversation = async (body: any) => {
   try {
     const chatId = body.data.key.remoteJid.split("@")[0];
-    const nameContact = body.data.pushName;
+    const nameContact = !body.data.key.fromMe ? body.data.pushName : chatId;
 
     const filterInbox = await getInbox(body.instance);
 
     const contact = await findContact(chatId) || await createContact(chatId, filterInbox.id, nameContact) as any;
+
+    if(!body.data.key.fromMe && contact.name === chatId && nameContact !== chatId) {
+      await updateContact(chatId, {
+        name: nameContact
+      });
+    }
 
     const contactId = contact.id || contact.payload.contact.id;
 
