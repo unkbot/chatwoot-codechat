@@ -116,3 +116,7 @@ cp env.example .env
 nano .env
 docker compose up -d --build
 ```
+
+O servidor irá estará rodando na porta escolhida na variável `PORT`.
+
+Para configurar o nginx siga as instruções do Deploy normal.
