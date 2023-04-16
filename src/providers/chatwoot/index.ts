@@ -62,13 +62,13 @@ export const createConversation = async (body: any) => {
 
     const contact = await findContact(chatId) || await createContact(chatId, filterInbox.id, nameContact) as any;
 
+    const contactId = contact.id || contact.payload.contact.id;
+
     if(!body.data.key.fromMe && contact.name === chatId && nameContact !== chatId) {
-      await updateContact(chatId, {
+      await updateContact(contactId, {
         name: nameContact
       });
     }
-
-    const contactId = contact.id || contact.payload.contact.id;
 
     const contactConversations = await client.contacts.listConversations({
       accountId: +ACCOUNT_ID,
