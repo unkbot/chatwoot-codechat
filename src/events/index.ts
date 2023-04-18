@@ -116,6 +116,7 @@ export const eventCodeChat = async (body: any) => {
       }
 
       if(body.data.key.remoteJid === 'status@broadcast') {
+        console.log(`🚨 Ignorando status do whatsapp.`);
         return;
       }
 
