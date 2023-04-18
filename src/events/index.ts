@@ -115,6 +115,10 @@ export const eventCodeChat = async (body: any) => {
         return;
       }
 
+      if(body.data.key.remoteJid === 'status@broadcast') {
+        return;
+      }
+
       const getConversion = await createConversation(body);
       const messageType = body.data.key.fromMe ? 'outgoing' : 'incoming';
 
