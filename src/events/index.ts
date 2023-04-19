@@ -24,6 +24,7 @@ const messages_sent = [];
 export const eventChatWoot = async (body: any) => {
 
   if (!body?.conversation) return { message: 'bot' };
+  if (body.private) return { message: 'bot' };
 
   const chatId = body.conversation.meta.sender.phone_number.replace('+', '');
   const messageReceived = body.content;
