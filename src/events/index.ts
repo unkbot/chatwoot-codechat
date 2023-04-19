@@ -116,6 +116,11 @@ export const eventCodeChat = async (body: any) => {
         return;
       }
 
+      if(body.data.key.remoteJid === 'status@broadcast') {
+        console.log(`🚨 Ignorando status do whatsapp.`);
+        return;
+      }
+
       const getConversion = await createConversation(body);
       const messageType = body.data.key.fromMe ? 'outgoing' : 'incoming';
 
