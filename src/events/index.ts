@@ -4,6 +4,7 @@ import {
   createConversation,
   createMessage,
   findContact,
+  getProfile,
   getInbox,
   updateContact,
 } from "../providers/chatwoot";
@@ -22,30 +23,33 @@ import { IMPORT_MESSAGES_SENT, TOSIGN } from "../config";
 const messages_sent = [];
 
 export const eventChatWoot = async (body: any) => {
-
+  console.log(`WenderEventChatWoot`)
   if (!body?.conversation) return { message: 'bot' };
   if (body.private) return { message: 'bot' };
 
   const chatId = body.conversation.meta.sender.phone_number.replace('+', '');
   const messageReceived = body.content;
   const senderName = body?.sender?.name;
+  const accountId = body.account.id as number;
 
-  console.log(`🎉 Evento recebido de ${chatId}`, body);
+  // console.log(`🎉 Evento recebido de ${chatId}`, body);
 
   if (chatId === '123456' && body.message_type === 'outgoing') {
     const command = messageReceived.replace("/", "");
-
     if (command === "iniciar") {
+
+      const status = await statusInstancia(body.inbox.name)
       try {
-        const status = await statusInstancia(body.inbox.name);
-        if (status.data.state !== "open") {
-          await createInstancia(body.inbox.name);
+
+        if (status && status.data.state === "open") {
+          await createBotMessage(accountId, `🚨 Instância ${body.inbox.name} já está conectada.`, "incoming", body.inbox.name);
+
         } else {
-          await createBotMessage(`🚨 Instância ${body.inbox.name} já está conectada.`, "incoming", body.inbox.name);
+          await createInstancia(body.inbox.name);
         }
       }
       catch (error) {
-        await createInstancia(body.inbox.name);
+        await createBotMessage(accountId, `🚨 Instância ${body.inbox.name} não foi criada.`, "incoming", body.inbox.name);
       }
 
     }
@@ -55,19 +59,26 @@ export const eventChatWoot = async (body: any) => {
 
       const status = await statusInstancia(body.inbox.name);
 
-      await createBotMessage(`⚠️ Status da instância ${body.inbox.name}: *${status.data.state}*`, "incoming", body.inbox.name);
+      if (!status) {
+        await createBotMessage(accountId, `⚠️ Instância ${body.inbox.name} não existe.`, "incoming", body.inbox.name);
+      }
+
+      if (status) {
+        await createBotMessage(accountId, `⚠️ Status da instância ${body.inbox.name}: *${status.data.state}*`, "incoming", body.inbox.name);
+      }
+
     }
 
     if (command === "desconectar") {
       console.log(`Desconectando Whatsapp ${body.inbox.name}: `)
       const msgLogout = `🚨 Desconectando Whatsapp da caixa de entrada *${body.inbox.name}*: `;
-      await createBotMessage(msgLogout, "incoming", body.inbox.name);
+      await createBotMessage(accountId, msgLogout, "incoming", body.inbox.name);
       await logoutInstancia(body.inbox.name);
     }
   }
-  
+
   if (body.message_type === 'outgoing' && body?.conversation?.messages?.length && chatId !== '123456') {
-    if( IMPORT_MESSAGES_SENT && messages_sent.includes(body.id) ) {
+    if (IMPORT_MESSAGES_SENT && messages_sent.includes(body.id)) {
       console.log(`🚨 Não importar mensagens enviadas, ficaria duplicado.`);
 
       const indexMessage = messages_sent.indexOf(body.id);
@@ -108,20 +119,26 @@ export const eventChatWoot = async (body: any) => {
 export const eventCodeChat = async (body: any) => {
   try {
     const instance = body.instance;
+    // console.log(`🎉 Evento recebido de ${instance}`, body);
 
-    console.log(`🎉 Evento recebido de ${instance}`, body);
+    const profile = await getProfile();
+
+    if (!profile) {
+      console.log(`🚨 Erro ao buscar perfil.`);
+      return;
+    }
 
     if (body.event === "messages.upsert") {
-      if(body.data.key.fromMe && !IMPORT_MESSAGES_SENT) {
+      if (body.data.key.fromMe && !IMPORT_MESSAGES_SENT) {
         return;
       }
 
-      if(body.data.key.remoteJid === 'status@broadcast') {
+      if (body.data.key.remoteJid === 'status@broadcast') {
         console.log(`🚨 Ignorando status do whatsapp.`);
         return;
       }
 
-      const getConversion = await createConversation(body);
+      const getConversion = await createConversation(body, profile.account_id);
       const messageType = body.data.key.fromMe ? 'outgoing' : 'incoming';
 
       if (!getConversion) {
@@ -151,13 +168,14 @@ export const eventCodeChat = async (body: any) => {
           },
         ];
         message = await createMessage(
+          profile.account_id,
           getConversion,
           bodyMessage,
           messageType,
           attachments
         );
       } else {
-        message = await createMessage(getConversion, bodyMessage, messageType);
+        message = await createMessage(profile.account_id, getConversion, bodyMessage, messageType);
       }
 
       messages_sent.push(message.id);
@@ -169,6 +187,7 @@ export const eventCodeChat = async (body: any) => {
       if (body.data.statusCode === 500) {
         const erroQRcode = `🚨 Limite de geração de QRCode atingido, para gerar um novo QRCode, envie a mensagem /iniciar novamente.`;
         return await createBotMessage(
+          profile.account_id,
           erroQRcode,
           "incoming",
           instance
@@ -184,18 +203,18 @@ export const eventCodeChat = async (body: any) => {
             filename: `${instance}.png`,
           },
         ];
-        await createBotMessage("Qrcode", "incoming", instance, attachments);
+        await createBotMessage(profile.account_id, "Qrcode", "incoming", instance, attachments);
 
         const msgQrCode = `⚡️ QRCode gerado com sucesso!\n\nDigitalize este código QR nos próximos 40 segundos:`;
-        await createBotMessage(msgQrCode, "incoming", instance);
+        await createBotMessage(profile.account_id, msgQrCode, "incoming", instance);
       }
     }
 
     if (body.event === "status.instance") {
       const { data } = body;
-      const inbox = await getInbox(instance);
+      const inbox = await getInbox(instance, profile.account_id);
       const msgStatus = `⚡️ Status da instância ${inbox.name}: ${data.status}`;
-      await createBotMessage(msgStatus, "incoming", instance);
+      await createBotMessage(profile.account_id, msgStatus, "incoming", instance);
     }
 
     if (body.event === "connection.update") {
@@ -203,7 +222,7 @@ export const eventCodeChat = async (body: any) => {
 
       if (body.data.state === "open") {
         const msgConnection = `🚀 Conexão realizada com sucesso!`;
-        await createBotMessage(msgConnection, "incoming", instance);
+        await createBotMessage(profile.account_id, msgConnection, "incoming", instance);
       }
     }
 
@@ -214,12 +233,14 @@ export const eventCodeChat = async (body: any) => {
         for (const item of data) {
           const number = item.id.split("@")[0];
           const photo = item.profilePictureUrl || null;
-          const find = await findContact(number);
+          const find = await findContact(number, profile.account_id);
 
           if (find) {
             await updateContact(find.id, {
               avatar_url: photo,
-            });
+            },
+              profile.account_id
+            );
           }
         }
       }

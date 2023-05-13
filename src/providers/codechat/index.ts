@@ -81,7 +81,7 @@ export const statusInstancia = async (name: string) => {
     return result;
 
   } catch (error) {
-    throw new Error(error);
+   return false
   }
 
 }

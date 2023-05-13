@@ -1,7 +1,5 @@
 import ChatwootClient from "@figuro/chatwoot-sdk";
-import { CHATWOOT_ACCOUNT_ID, CHATWOOT_BASE_URL, CHATWOOT_TOKEN } from "../../config";
-
-const ACCOUNT_ID = CHATWOOT_ACCOUNT_ID;
+import { CHATWOOT_BASE_URL, CHATWOOT_TOKEN } from "../../config";
 
 const client = new ChatwootClient({
   config: {
@@ -12,18 +10,22 @@ const client = new ChatwootClient({
   }
 });
 
-export const getContact = async (id: number) => {
-  const contact = await client.contact.getContactable({
-    accountId: +ACCOUNT_ID,
-    id
-  });
+export const getContact = async (id: number, accountId: number) => {
+  if (id && accountId) {
+    const contact = await client.contact.getContactable({
+      accountId: accountId,
+      id
+    });
 
-  return contact;
+    return contact;
+  } else {
+    return null;
+  }
 };
 
-export const updateContact = async (id: number, data: any) => {
+export const updateContact = async (id: number, data: any, accountId: number) => {
   const contact = await client.contacts.update({
-    accountId: +ACCOUNT_ID,
+    accountId,
     id,
     data
   });
@@ -31,9 +33,9 @@ export const updateContact = async (id: number, data: any) => {
   return contact;
 };
 
-export const createContact = async (phoneNumber: string, inboxId: number, name?: string) => {
+export const createContact = async (phoneNumber: string, inboxId: number, accountId: number, name?: string) => {
   const create = await client.contacts.create({
-    accountId: +ACCOUNT_ID,
+    accountId,
     data: {
       "inbox_id": inboxId,
       "name": name || phoneNumber,
@@ -44,37 +46,39 @@ export const createContact = async (phoneNumber: string, inboxId: number, name?:
   return create;
 };
 
-export const findContact = async (phoneNumber: string) => {
+export const findContact = async (phoneNumber: string, accountId: number) => {
   const contact = await client.contacts.search({
-    accountId: +ACCOUNT_ID,
+    accountId,
     q: `+${phoneNumber}`
   });
 
   return contact.payload.find((contact) => contact.phone_number === `+${phoneNumber}`);
 };
 
-export const createConversation = async (body: any) => {
+export const createConversation = async (body: any, accountId: number) => {
   try {
     const chatId = body.data.key.remoteJid.split("@")[0];
     const nameContact = !body.data.key.fromMe ? body.data.pushName : chatId;
 
-    const filterInbox = await getInbox(body.instance);
+    const filterInbox = await getInbox(body.instance, accountId);
 
-    const contact = await findContact(chatId) || await createContact(chatId, filterInbox.id, nameContact) as any;
+    const contact = await findContact(chatId, accountId) || await createContact(chatId, filterInbox.id, nameContact) as any;
 
     const contactId = contact.id || contact.payload.contact.id;
 
-    if(!body.data.key.fromMe && contact.name === chatId && nameContact !== chatId) {
+    if (!body.data.key.fromMe && contact.name === chatId && nameContact !== chatId) {
       await updateContact(contactId, {
         name: nameContact
-      });
+      },
+      accountId
+      );
     }
 
     const contactConversations = await client.contacts.listConversations({
-      accountId: +ACCOUNT_ID,
+      accountId,
       id: contactId
     }) as any;
-    
+
     if (contactConversations) {
       const conversation = contactConversations.payload.find(conversation => conversation.status !== "resolved");
       if (conversation) {
@@ -83,7 +87,7 @@ export const createConversation = async (body: any) => {
     }
 
     const conversation = await client.conversations.create({
-      accountId: +ACCOUNT_ID,
+      accountId,
       data: {
         contact_id: `${contactId}`,
         inbox_id: `${filterInbox.id}`,
@@ -98,21 +102,21 @@ export const createConversation = async (body: any) => {
   }
 };
 
-export const getInbox = async (instance) => {
+export const getInbox = async (instance: any, accountId: number) => {
   const inbox = await client.inboxes.list({
-    accountId: +ACCOUNT_ID,
+    accountId,
   }) as any;
   const findByName = inbox.payload.find((inbox) => inbox.name === instance);
   return findByName;
 };
 
-export const createMessage = async (conversationId: number, content: string, messageType: "incoming" | "outgoing" | undefined, attachments?: {
+export const createMessage = async (accountId: number, conversationId: number, content: string, messageType: "incoming" | "outgoing" | undefined, attachments?: {
   content: unknown;
   encoding: string;
   filename: string;
 }[]) => {
   const message = await client.messages.create({
-    accountId: +ACCOUNT_ID,
+    accountId,
     conversationId: conversationId,
     data: {
       content: content,
@@ -124,25 +128,25 @@ export const createMessage = async (conversationId: number, content: string, mes
   return message;
 };
 
-export const createBotMessage = async (content: string, messageType: "incoming" | "outgoing" | undefined, instancia: string, attachments?: {
+export const createBotMessage = async (accountId: number, content: string, messageType: "incoming" | "outgoing" | undefined, instancia: string, attachments?: {
   content: unknown;
   encoding: string;
   filename: string;
 }[]) => {
 
 
-  const contact = await findContact("123456")
+  const contact = await findContact("123456", accountId)
 
-  const filterInbox = await getInbox(instancia);
+  const filterInbox = await getInbox(instancia, accountId);
 
   const findConversation = await client.conversations.list({
-    accountId: +ACCOUNT_ID,
+    accountId,
     inboxId: filterInbox.id,
   });
   const conversation = findConversation.data.payload.find((conversation) => conversation?.meta?.sender?.id === contact.id && conversation.status === "open");
 
   const message = await client.messages.create({
-    accountId: +ACCOUNT_ID,
+    accountId,
     conversationId: conversation.id,
     data: {
       content: content,
@@ -153,3 +157,8 @@ export const createBotMessage = async (content: string, messageType: "incoming" 
 
   return message;
 };
+
+export const getProfile = async (): Promise<any> => {
+  const users =  await client.profile.profile()
+  return users;
+}
