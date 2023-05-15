@@ -62,7 +62,7 @@ export const createConversation = async (body: any, accountId: number) => {
 
     const filterInbox = await getInbox(body.instance, accountId);
 
-    const contact = await findContact(chatId, accountId) || await createContact(chatId, filterInbox.id, nameContact) as any;
+    const contact = await findContact(chatId, accountId) || await createContact(chatId, filterInbox.id, accountId, nameContact) as any;
 
     const contactId = contact.id || contact.payload.contact.id;
 
