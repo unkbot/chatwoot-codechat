@@ -171,14 +171,10 @@ export const sendAttachment = async (number: string, media: any, instancia: stri
   }
 };
 
-export const getBase64FromMediaMessage = async (id: string, instancia: string) => {
+export const getBase64FromMediaMessage = async (msg: string, instancia: string) => {
   try {
     const url = `${CODECHAT_BASE_URL}/chat/getBase64FromMediaMessage/${instancia}`;
-    const data = {
-      "key": {
-        "id": id
-      }
-    };
+    const data = msg
 
     const result = await axios.post(url, JSON.stringify(data), {
       headers: {
@@ -189,6 +185,7 @@ export const getBase64FromMediaMessage = async (id: string, instancia: string) =
 
     return result;
   } catch (error) {
+    console.log(error)
     throw new Error(error);
   }
 

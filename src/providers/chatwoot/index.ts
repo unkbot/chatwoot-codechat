@@ -1,16 +1,40 @@
 import ChatwootClient from "@figuro/chatwoot-sdk";
-import { CHATWOOT_BASE_URL, CHATWOOT_TOKEN } from "../../config";
+import db from "../../db";
+import { createReadStream, unlink, unlinkSync } from "fs";
+import axios from "axios";
+import FormData from 'form-data';
 
-const client = new ChatwootClient({
-  config: {
-    basePath: CHATWOOT_BASE_URL,
-    with_credentials: true,
-    credentials: "include",
-    token: CHATWOOT_TOKEN,
+
+export const clientCw = async (accountId: number) => {
+  const provider = await db.prepare(`SELECT * FROM providers WHERE account_id = ?`).get(accountId) as any;
+  if (!provider) {
+    throw new Error("Provider não encontrado");
   }
-});
+
+  const client = new ChatwootClient({
+    config: {
+      basePath: provider.url,
+      with_credentials: true,
+      credentials: "include",
+      token: provider.token,
+    }
+  });
+
+  console.log({
+    config: {
+      basePath: provider.url,
+      with_credentials: true,
+      credentials: "include",
+      token: provider.token,
+    }
+  })
+
+  return client;
+};
 
 export const getContact = async (id: number, accountId: number) => {
+  const client = await clientCw(accountId);
+
   if (id && accountId) {
     const contact = await client.contact.getContactable({
       accountId: accountId,
@@ -24,6 +48,8 @@ export const getContact = async (id: number, accountId: number) => {
 };
 
 export const updateContact = async (id: number, data: any, accountId: number) => {
+  const client = await clientCw(accountId);
+
   const contact = await client.contacts.update({
     accountId,
     id,
@@ -34,6 +60,8 @@ export const updateContact = async (id: number, data: any, accountId: number) =>
 };
 
 export const createContact = async (phoneNumber: string, inboxId: number, accountId: number, name?: string) => {
+  const client = await clientCw(accountId);
+
   const create = await client.contacts.create({
     accountId,
     data: {
@@ -47,6 +75,8 @@ export const createContact = async (phoneNumber: string, inboxId: number, accoun
 };
 
 export const findContact = async (phoneNumber: string, accountId: number) => {
+  const client = await clientCw(accountId);
+
   const contact = await client.contacts.search({
     accountId,
     q: `+${phoneNumber}`
@@ -57,6 +87,9 @@ export const findContact = async (phoneNumber: string, accountId: number) => {
 
 export const createConversation = async (body: any, accountId: number) => {
   try {
+    const client = await clientCw(accountId);
+
+
     const chatId = body.data.key.remoteJid.split("@")[0];
     const nameContact = !body.data.key.fromMe ? body.data.pushName : chatId;
 
@@ -70,7 +103,7 @@ export const createConversation = async (body: any, accountId: number) => {
       await updateContact(contactId, {
         name: nameContact
       },
-      accountId
+        accountId
       );
     }
 
@@ -103,6 +136,8 @@ export const createConversation = async (body: any, accountId: number) => {
 };
 
 export const getInbox = async (instance: any, accountId: number) => {
+  const client = await clientCw(accountId);
+
   const inbox = await client.inboxes.list({
     accountId,
   }) as any;
@@ -115,6 +150,8 @@ export const createMessage = async (accountId: number, conversationId: number, c
   encoding: string;
   filename: string;
 }[]) => {
+  const client = await clientCw(accountId);
+
   const message = await client.messages.create({
     accountId,
     conversationId: conversationId,
@@ -134,6 +171,7 @@ export const createBotMessage = async (accountId: number, content: string, messa
   filename: string;
 }[]) => {
 
+  const client = await clientCw(accountId);
 
   const contact = await findContact("123456", accountId)
 
@@ -158,7 +196,35 @@ export const createBotMessage = async (accountId: number, content: string, messa
   return message;
 };
 
-export const getProfile = async (): Promise<any> => {
-  const users =  await client.profile.profile()
-  return users;
-}
+export const sendData = async (accountId: number, conversationId: number, file: string, messageType: "incoming" | "outgoing" | undefined, content?: string) => {
+  const data = new FormData();
+
+  if (content) {
+    data.append('content', content);
+  }
+
+  data.append('message_type', messageType);
+
+  data.append('attachments[]', createReadStream(file));
+
+  const provider = db.prepare(`SELECT * FROM providers WHERE account_id = ?`).get(accountId) as any;
+
+  const config = {
+    method: 'post',
+    maxBodyLength: Infinity,
+    url: `${provider.url}/api/v1/accounts/${accountId}/conversations/${conversationId}/messages`,
+    headers: {
+      'api_access_token': provider.token,
+      ...data.getHeaders()
+    },
+    data: data
+  };
+
+  try {
+    const { data } = await axios.request(config);
+    unlinkSync(file);
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};

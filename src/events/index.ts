@@ -4,8 +4,8 @@ import {
   createConversation,
   createMessage,
   findContact,
-  getProfile,
   getInbox,
+  sendData,
   updateContact,
 } from "../providers/chatwoot";
 import {
@@ -19,20 +19,20 @@ import {
   statusInstancia
 } from "../providers/codechat"
 import { IMPORT_MESSAGES_SENT, TOSIGN } from "../config";
+import { writeFileSync } from "fs";
+import db from "../db";
+import path from "path";
 
 const messages_sent = [];
 
 export const eventChatWoot = async (body: any) => {
-  console.log(`WenderEventChatWoot`)
-  if (!body?.conversation) return { message: 'bot' };
-  if (body.private) return { message: 'bot' };
-
+  if (!body?.conversation || body.private) return { message: 'bot' };
   const chatId = body.conversation.meta.sender.phone_number.replace('+', '');
   const messageReceived = body.content;
   const senderName = body?.sender?.name;
   const accountId = body.account.id as number;
 
-  // console.log(`🎉 Evento recebido de ${chatId}`, body);
+  console.log(`🎉 Evento recebido de ${chatId}`, body);
 
   if (chatId === '123456' && body.message_type === 'outgoing') {
     const command = messageReceived.replace("/", "");
@@ -119,14 +119,18 @@ export const eventChatWoot = async (body: any) => {
 export const eventCodeChat = async (body: any) => {
   try {
     const instance = body.instance;
-    // console.log(`🎉 Evento recebido de ${instance}`, body);
+    console.log(`🎉 Evento recebido de ${instance}`, body);
 
-    const profile = await getProfile();
 
-    if (!profile) {
-      console.log(`🚨 Erro ao buscar perfil.`);
+    const stmtExist = db.prepare(`SELECT * FROM providers WHERE nameInbox = ?`);
+    const instanceDb = stmtExist.get(instance) as any;
+
+    if (!instanceDb) {
+      console.log(`🚨 Erro ao buscar instância.`);
       return;
     }
+
+    const accountId = instanceDb.account_id;
 
     if (body.event === "messages.upsert") {
       if (body.data.key.fromMe && !IMPORT_MESSAGES_SENT) {
@@ -138,7 +142,7 @@ export const eventCodeChat = async (body: any) => {
         return;
       }
 
-      const getConversion = await createConversation(body, profile.account_id);
+      const getConversion = await createConversation(body, accountId);
       const messageType = body.data.key.fromMe ? 'outgoing' : 'incoming';
 
       if (!getConversion) {
@@ -149,72 +153,39 @@ export const eventCodeChat = async (body: any) => {
       const isMedia = isMediaMessage(body.data.message);
       const bodyMessage = getConversationMessage(body.data.message);
 
-      let message;
-
       if (isMedia) {
         const downloadBase64 = await getBase64FromMediaMessage(
-          body.data.key.id,
+          body.data,
           instance
         );
+
         const random = Math.random().toString(36).substring(7);
         const nameFile = `${random}.${mimeTypes.extension(
           downloadBase64.data.mimetype
         )}`;
-        const attachments = [
-          {
-            content: downloadBase64.data.base64,
-            encoding: "base64",
-            filename: downloadBase64.data?.fileName || nameFile,
-          },
-        ];
-        message = await createMessage(
-          profile.account_id,
+
+        const fileData = Buffer.from(downloadBase64.data.base64, 'base64');
+
+        writeFileSync(`${path.join(__dirname, '../../uploads')}/${nameFile}`, fileData, 'utf8');
+
+        return await sendData(
+          accountId,
           getConversion,
-          bodyMessage,
+          `${path.join(__dirname, '../../uploads')}/${nameFile}`,
           messageType,
-          attachments
+          bodyMessage
         );
       } else {
-        message = await createMessage(profile.account_id, getConversion, bodyMessage, messageType);
+        return await createMessage(accountId, getConversion, bodyMessage, messageType);
       }
 
-      messages_sent.push(message.id);
-
-      return message;
-    }
-
-    if (body.event === "qrcode.updated") {
-      if (body.data.statusCode === 500) {
-        const erroQRcode = `🚨 Limite de geração de QRCode atingido, para gerar um novo QRCode, envie a mensagem /iniciar novamente.`;
-        return await createBotMessage(
-          profile.account_id,
-          erroQRcode,
-          "incoming",
-          instance
-        );
-      } else {
-        const attachments = [
-          {
-            content: body.data?.qrcode.base64.replace(
-              "data:image/png;base64,",
-              ""
-            ),
-            encoding: "base64",
-            filename: `${instance}.png`,
-          },
-        ];
-        await createBotMessage(profile.account_id, "Qrcode", "incoming", instance, attachments);
-
-        const msgQrCode = `⚡️ QRCode gerado com sucesso!\n\nDigitalize este código QR nos próximos 40 segundos:`;
-        await createBotMessage(profile.account_id, msgQrCode, "incoming", instance);
-      }
     }
 
     if (body.event === "status.instance") {
       const { data } = body;
-      const inbox = await getInbox(instance, profile.account_id);
+      const inbox = await getInbox(instance, accountId);
       const msgStatus = `⚡️ Status da instância ${inbox.name}: ${data.status}`;
-      await createBotMessage(profile.account_id, msgStatus, "incoming", instance);
+      await createBotMessage(accountId, msgStatus, "incoming", instance);
     }
 
     if (body.event === "connection.update") {
@@ -222,7 +193,7 @@ export const eventCodeChat = async (body: any) => {
 
       if (body.data.state === "open") {
         const msgConnection = `🚀 Conexão realizada com sucesso!`;
-        await createBotMessage(profile.account_id, msgConnection, "incoming", instance);
+        await createBotMessage(accountId, msgConnection, "incoming", instance);
       }
     }
 
@@ -233,13 +204,13 @@ export const eventCodeChat = async (body: any) => {
         for (const item of data) {
           const number = item.id.split("@")[0];
           const photo = item.profilePictureUrl || null;
-          const find = await findContact(number, profile.account_id);
+          const find = await findContact(number, accountId);
 
           if (find) {
             await updateContact(find.id, {
               avatar_url: photo,
             },
-              profile.account_id
+              accountId
             );
           }
         }
