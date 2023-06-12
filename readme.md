@@ -58,6 +58,20 @@ server {
 }
 ```
 
+
+Para criar um provider execute o curl
+
+```bash
+curl --location 'http://localhost:1234/create-provider' \
+--header 'Content-Type: application/json' \
+--data '{
+    "account_id": "76598",
+    "token": "LrN39bkVbbFRr5H3WBQUzRf3",
+    "url": "https://app.chatwoot.com",
+    "nameInbox": "SeuNomeSemEspaço"
+}'
+```
+
 Crie os links simbólicos para habilitar os sites:
 
 ```bash
