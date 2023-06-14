@@ -18,16 +18,15 @@ import {
   sendText,
   logoutInstancia,
   statusInstancia,
-  deleteInstance
-} from "../providers/codechat"
+} from "../providers/codechat";
 import { IMPORT_MESSAGES_SENT, TOSIGN } from "../config";
 import { writeFileSync } from "fs";
 import db from "../db";
 import path from "path";
 
-const messages_sent = [];
+const messages_sent: string[] = [];
 
-export const eventChatWoot = async (body: any) => {
+export const eventChatWoot = async (body: any): Promise<{ message: string }> => {
   if (!body?.conversation || body.private) return { message: 'bot' };
   const chatId = body.conversation.meta.sender.phone_number.replace('+', '');
   const messageReceived = body.content;
@@ -118,7 +117,7 @@ export const eventChatWoot = async (body: any) => {
   return { message: 'bot' };
 }
 
-export const eventCodeChat = async (body: any) => {
+export const eventCodeChat = async (body: any): Promise<any> => {
   try {
     const instance = body.instance;
     console.log(`🎉 Evento recebido de ${instance}`);
@@ -168,18 +167,22 @@ export const eventCodeChat = async (body: any) => {
 
         const fileData = Buffer.from(downloadBase64.data.base64, 'base64');
 
-        writeFileSync(`${path.join(__dirname, '../../uploads')}/${nameFile}`, fileData, 'utf8');
+        const fileName = `${path.join(__dirname, '../../uploads')}/${nameFile}`
+
+        writeFileSync(fileName, fileData, 'utf8');
 
         return await sendData(
           accountId,
           getConversion,
-          `${path.join(__dirname, '../../uploads')}/${nameFile}`,
+          fileName,
           messageType,
           bodyMessage
         );
-      } else {
-        return await createMessage(accountId, getConversion, bodyMessage, messageType);
       }
+
+      const send = await createMessage(accountId, getConversion, bodyMessage, messageType);
+
+      return send;
 
     }
 
@@ -256,4 +259,3 @@ export const eventCodeChat = async (body: any) => {
     console.log(error);
   }
 };
-
