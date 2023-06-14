@@ -20,15 +20,6 @@ export const clientCw = async (accountId: number) => {
     }
   });
 
-  console.log({
-    config: {
-      basePath: provider.url,
-      with_credentials: true,
-      credentials: "include",
-      token: provider.token,
-    }
-  })
-
   return client;
 };
 
@@ -213,6 +204,57 @@ export const sendData = async (accountId: number, conversationId: number, file: 
     method: 'post',
     maxBodyLength: Infinity,
     url: `${provider.url}/api/v1/accounts/${accountId}/conversations/${conversationId}/messages`,
+    headers: {
+      'api_access_token': provider.token,
+      ...data.getHeaders()
+    },
+    data: data
+  };
+
+  try {
+    const { data } = await axios.request(config);
+    unlinkSync(file);
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const createBotQr = async (accountId: number, content: string, messageType: "incoming" | "outgoing" | undefined, instancia: string, file?: string) => {
+
+  const client = await clientCw(accountId);
+
+  const contact = await findContact("123456", accountId)
+
+  const filterInbox = await getInbox(instancia, accountId);
+
+  const findConversation = await client.conversations.list({
+    accountId,
+    inboxId: filterInbox.id,
+  });
+  const conversation = findConversation.data.payload.find((conversation) => conversation?.meta?.sender?.id === contact.id && conversation.status === "open");
+
+ 
+  const data = new FormData();
+
+  if (content) {
+    data.append('content', content);
+  }
+
+  data.append('message_type', messageType);
+
+  if(file){
+
+  data.append('attachments[]', createReadStream(file));
+
+  }
+
+  const provider = db.prepare(`SELECT * FROM providers WHERE account_id = ?`).get(accountId) as any;
+
+  const config = {
+    method: 'post',
+    maxBodyLength: Infinity,
+    url: `${provider.url}/api/v1/accounts/${accountId}/conversations/${conversation.id}/messages`,
     headers: {
       'api_access_token': provider.token,
       ...data.getHeaders()

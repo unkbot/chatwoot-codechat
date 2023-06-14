@@ -1,6 +1,7 @@
 import mimeTypes from "mime-types";
 import {
   createBotMessage,
+  createBotQr,
   createConversation,
   createMessage,
   findContact,
@@ -16,7 +17,8 @@ import {
   sendAttachment,
   sendText,
   logoutInstancia,
-  statusInstancia
+  statusInstancia,
+  deleteInstance
 } from "../providers/codechat"
 import { IMPORT_MESSAGES_SENT, TOSIGN } from "../config";
 import { writeFileSync } from "fs";
@@ -32,24 +34,24 @@ export const eventChatWoot = async (body: any) => {
   const senderName = body?.sender?.name;
   const accountId = body.account.id as number;
 
-  console.log(`🎉 Evento recebido de ${chatId}`, body);
+  console.log(`🎉 Evento recebido de ${chatId}`);
 
   if (chatId === '123456' && body.message_type === 'outgoing') {
     const command = messageReceived.replace("/", "");
     if (command === "iniciar") {
-
-      const status = await statusInstancia(body.inbox.name)
       try {
+        const status = await statusInstancia(body.inbox.name) as any;
 
-        if (status && status.data.state === "open") {
-          await createBotMessage(accountId, `🚨 Instância ${body.inbox.name} já está conectada.`, "incoming", body.inbox.name);
+        console.log(status.data)
 
-        } else {
+        if (status.data.state !== "open") {
           await createInstancia(body.inbox.name);
+        } else {
+          await createBotMessage(accountId, `🚨 Instância ${body.inbox.name} já está conectada.`, "incoming", body.inbox.name);
         }
       }
       catch (error) {
-        await createBotMessage(accountId, `🚨 Instância ${body.inbox.name} não foi criada.`, "incoming", body.inbox.name);
+        await createInstancia(body.inbox.name);
       }
 
     }
@@ -119,7 +121,7 @@ export const eventChatWoot = async (body: any) => {
 export const eventCodeChat = async (body: any) => {
   try {
     const instance = body.instance;
-    console.log(`🎉 Evento recebido de ${instance}`, body);
+    console.log(`🎉 Evento recebido de ${instance}`);
 
 
     const stmtExist = db.prepare(`SELECT * FROM providers WHERE nameInbox = ?`);
@@ -216,6 +218,40 @@ export const eventCodeChat = async (body: any) => {
         }
       }
     }
+
+    if (body.event === "qrcode.updated") {
+      if (body.data.statusCode === 500) {
+        const erroQRcode = `🚨 Limite de geração de QRCode atingido, para gerar um novo QRCode, envie a mensagem /iniciar novamente.`;
+        return await createBotMessage(
+          accountId,
+          erroQRcode,
+          "incoming",
+          instance
+        );
+      } else {
+
+        const fileData = Buffer.from(body.data?.qrcode.base64.replace(
+          "data:image/png;base64,",
+          ""
+        ), 'base64');
+
+        const fileName = `${path.join(__dirname, '../../uploads')}/${`${instance}.png`}`
+
+        writeFileSync(fileName, fileData, 'utf8');
+
+        await createBotQr(
+          accountId,
+          "QRCode gerado com sucesso!",
+          "incoming",
+          instance,
+          fileName
+        )
+
+        const msgQrCode = `⚡️ QRCode gerado com sucesso!\n\nDigitalize este código QR nos próximos 40 segundos:`;
+        await createBotMessage(accountId, msgQrCode, "incoming", instance);
+      }
+    }
+
   } catch (error) {
     console.log(error);
   }

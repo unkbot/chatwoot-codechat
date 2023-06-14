@@ -32,13 +32,6 @@ app.post('/create-provider', async (req: Request, res: Response) => {
       nameInbox TEXT
     )`);
 
-    const stmtExist = db.prepare(`SELECT * FROM providers WHERE account_id = ?`);
-    const exist = stmtExist.get(account_id);
-
-    if (exist) {
-      return res.json({ message: 'error', error: 'Já existe um provider com esse account_id' });
-    }
-
     const stmt = db.prepare(`INSERT INTO providers (account_id, token, url, nameInbox) VALUES (?, ?, ?, ?)`);
     const info = stmt.run(account_id, token, url, nameInbox);
 

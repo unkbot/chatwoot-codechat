@@ -204,6 +204,25 @@ export const isMediaMessage = (message: any) => {
   return messageKeys.some(key => media.includes(key));
 };
 
+export const deleteInstance = async (name: string) => {
+  try {
+    const url = `${CODECHAT_BASE_URL}/instance/delete/${name}`;
+
+    const result = await axios.delete(url, {
+      headers: {
+        'apikey': CODECHAT_API_KEY,
+      },
+    });
+
+    return result;
+
+  } catch (error) {
+    throw new Error(error);
+  }
+
+};
+
+
 export const getMessageContent = (types: any): string | undefined => {
   const typeKey = Object.keys(types).find(key => types[key] !== undefined);
   return typeKey ? types[typeKey] : undefined;
