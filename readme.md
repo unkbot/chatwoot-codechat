@@ -1,8 +1,12 @@
 # chatwoot-codechat
 
-## Deploy Ubuntu 22.x
+Este é um repositório do chatwoot-codechat, um aplicativo que permite integração do Chatwoot com o WhatsApp CodeChat como api de canal de comunicação. Siga as instruções abaixo para fazer o deploy do aplicativo em um ambiente Ubuntu 22.x com Node.js 16.x.
 
-NodeJS 16x
+## Deploy no Ubuntu 22.x
+
+### Node.js 16.x
+
+Execute os seguintes comandos no terminal para instalar o Node.js 16.x:
 
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
@@ -11,34 +15,44 @@ node -v
 npm -v
 ```
 
-Clone
+### Clonar o repositório
+
+Clone este repositório para sua máquina local:
 
 ```bash
-git clone git@github.com:w3nder/chatwoot-codechat.git
+git clone https://github.com/unkbot/chatwoot-codechat
 ```
 
-Altere o nome do .env.example para .env e preencha com as informações correta e executa o install e build
+### Configurar o ambiente
+
+Renomeie o arquivo `.env.example` para `.env` e preencha-o com as informações corretas. Em seguida, execute os comandos abaixo para instalar as dependências e criar o build:
 
 ```bash
 cd chatwoot-codechat
-cp env.example .env
+cp .env.example .env
 nano .env
 npm install
 npm run build
 ```
 
-Instale o pm2 **com sudo** e inicie o backend com ele:
+### Iniciar aplicação com o PM2
+
+Instale o PM2 e inicie o backend com ele:
 
 ```bash
 sudo npm install -g pm2
 pm2 start dist/app.js --name chatwoot-codechat
 ```
 
-Crie o proxy para integração
+### Proxy e configuração do Nginx
+
+Abra o arquivo de configuração do Nginx:
 
 ```bash
 sudo nano /etc/nginx/sites-available/chatwoot-codechat
 ```
+
+Cole o seguinte conteúdo no arquivo:
 
 ```bash
 server {
@@ -58,79 +72,88 @@ server {
 }
 ```
 
-
-Para criar um provider execute o curl
-
-```bash
-curl --location 'http://localhost:1234/create-provider' \
---header 'Content-Type: application/json' \
---data '{
-    "account_id": "76598",
-    "token": "LrN39bkVbbFRr5H3WBQUzRf3",
-    "url": "https://app.chatwoot.com",
-    "nameInbox": "SeuNomeSemEspaço"
-}'
-```
-
-Crie os links simbólicos para habilitar os sites:
+Crie links simbólicos para habilitar os sites:
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/chatwoot-codechat /etc/nginx/sites-enabled
 ```
 
-Teste a configuração e reinicie o nginx:
+Teste a configuração do Nginx e reinicie o serviço:
 
 ```bash
 sudo nginx -t
 sudo service nginx restart
 ```
 
-Agora, ative o SSL (https) nos seus sites para utilizar todas as funcionalidades da aplicação como notificações e envio de mensagens áudio. Uma forma fácil de o fazer é utilizar Certbot:
+### Ativar o SSL (HTTPS)
 
-Instale o certbor com snapd:
+Para utilizar todas as funcionalidades da aplicação, como notificações e envio de mensagens de áudio, ative o SSL nos seus sites. Uma maneira fácil de fazer isso é usando o Certbot. Siga as etapas abaixo:
 
-```bash
+Instale o Certbot com o Snapd:
+
+```
+
+bash
 sudo snap install --classic certbot
 ```
 
-Habilite SSL com nginx:
+Habilite o SSL com o Nginx:
 
 ```bash
 sudo certbot --nginx
 ```
 
-URLs WEBHOOK:
+### URLs WEBHOOK
+
+As URLs de webhook para integração são as seguintes:
 
 ```bash
 https://chatwoot-codechat.seudominio.com.br/webhook/codechat
 https://chatwoot-codechat.seudominio.com.br/webhook/chatwoot
 ```
 
-No CODECHAT, você precisa usar o webhook global ele por padrão vem desabilitado no env.yml
+No seu codechat, altere a URL de webhook GLOBAL no seu env.yml para o webhook da aplicação e ative-o definindo `ENABLED` como `true`:
 
-**Manual do Bot**
+```bash
+# Webhook Settings
+WEBHOOK:
+  # Define a global webhook that will listen for enabled events from all instances
+  GLOBAL:
+    URL: http://0.0.0.0:1234/webhook/codechat
+    ENABLED: true
+```
 
-Contato do Bot: +123456
+A URL deve ser `http://0.0.0.0:1234/webhook/codechat` caso você esteja fazendo o deploy localmente, caso contrário utilize o seu domínio configurado no nginx.
+
+## Manual do Bot
+
+Para inicar a conexão com WhatsApp você deve criar uma nova Caixa de Entrada em seu ChatWoot definindo um nome e a URL, caso o seu chatwoot esteja na mesma máquina em que fizeste o deployment da aplicação a URL deve ser `http://localhost:1234/webhook/chatwoot` caso contrário coloque o seu domínio configurado no nginx.
+
+Após a criação da caixa de entrada crie também um novo contato, este contato será usado como interface de gerenciamento de suas instâncias, nele onde você conseguirá usar os comandos disponíveis. 
+
+#### Contato do Bot: +123456
+
+Para utilizar, após criar o contato selecione-o e envie uma mensagem utilizando a Caixa de Entrada criada anteriormente.
 
 Comandos Disponíveis:
 
-- `/iniciar` Este comando irá criar uma nova instância e gerar um QR code para você escanear com o WhatsApp. Você poderá conectar-se à instância e começar a usar o bot.
+- `/iniciar`: Este comando cria uma nova instância e gera um código QR para escanear com o WhatsApp. Você pode se conectar à instância e começar a usar o bot.
 
-- `/status` Este comando irá verificar o status da instância e retornar informações atualizadas sobre o estado da conexão.
+- `/status`: Este comando verifica o status da instância e retorna informações atualizadas sobre o estado da conexão.
 
-- `/desconectar` Este comando irá desconectar o WhatsApp da instância, encerrando a conexão.
+- `/desconectar`: Este comando desconecta o WhatsApp da instância, encerrando a conexão.
 
-## Deploy Docker
+## Implantação com Docker
 
-Para fazer o deploy usando docker siga os passos abaixo:
+Para implantar o aplicativo usando Docker, siga as etapas abaixo:
 
 ```bash
 cd chatwoot-codechat
-cp env.example .env
+cp .env.example .env
 nano .env
 docker compose up -d --build
 ```
 
-O servidor irá estará rodando na porta escolhida na variável `PORT`.
+O servidor estará em execução na porta especificada na variável `PORT`.
 
-Para configurar o nginx siga as instruções do Deploy normal.
+Para configurar o Nginx, siga as instruções de deployment mencionadas anteriormente.

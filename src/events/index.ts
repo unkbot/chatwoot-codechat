@@ -19,7 +19,7 @@ import {
   logoutInstancia,
   statusInstancia,
 } from "../providers/codechat";
-import { IMPORT_MESSAGES_SENT, TOSIGN } from "../config";
+import { IMPORT_MESSAGES_SENT, TOSIGN, CHATWOOT_TOKEN, CHATWOOT_BASE_URL } from "../config";
 import { writeFileSync } from "fs";
 import db from "../db";
 import path from "path";
@@ -39,6 +39,24 @@ export const eventChatWoot = async (body: any): Promise<{ message: string }> => 
     const command = messageReceived.replace("/", "");
     if (command === "iniciar") {
       try {
+
+        db.exec(`CREATE TABLE IF NOT EXISTS providers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          account_id INTEGER,
+          token TEXT,
+          url TEXT,
+          nameInbox TEXT
+        )`);
+    
+        const stmtExist = db.prepare('SELECT * FROM providers WHERE nameInbox = ?');
+        const instanceDbId = stmtExist.get(accountId);
+        const instanceDbName = stmtExist.get(body.inbox.name);
+        
+        if (!instanceDbId || !instanceDbName) {
+          const stmt = db.prepare('INSERT INTO providers (account_id, token, url, nameInbox) VALUES (?, ?, ?, ?)');
+          stmt.run(accountId, CHATWOOT_TOKEN, CHATWOOT_BASE_URL, body.inbox.name);
+        }  
+
         const status = await statusInstancia(body.inbox.name) as any;
 
         console.log(status.data)
