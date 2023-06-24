@@ -104,7 +104,7 @@ export const createConversation = async (body: any, accountId: number) => {
     }) as any;
 
     if (contactConversations) {
-      const conversation = contactConversations.payload.find(conversation => conversation.status !== "resolved");
+      const conversation = contactConversations.payload.find(conversation => conversation.status !== "resolved" && conversation.inbox_id == filterInbox.id);
       if (conversation) {
         return conversation.id;
       }
