@@ -48,9 +48,10 @@ export const eventChatWoot = async (body: any): Promise<{ message: string }> => 
           nameInbox TEXT
         )`);
     
-        const stmtExist = db.prepare('SELECT * FROM providers WHERE nameInbox = ?');
-        const instanceDbId = stmtExist.get(accountId);
-        const instanceDbName = stmtExist.get(body.inbox.name);
+        const stmtExistId = db.prepare('SELECT * FROM providers WHERE account_id = ?');
+        const stmtExistName = db.prepare('SELECT * FROM providers WHERE nameInbox = ?');
+        const instanceDbId = stmtExistId.get(accountId);
+        const instanceDbName = stmtExistName.get(body.inbox.name);
         
         if (!instanceDbId || !instanceDbName) {
           const stmt = db.prepare('INSERT INTO providers (account_id, token, url, nameInbox) VALUES (?, ?, ?, ?)');
