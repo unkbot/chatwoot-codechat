@@ -13,36 +13,6 @@ app.use(
   json({ limit: '50mb' }),
 );
 
-
-app.post('/create-provider', async (req: Request, res: Response) => {
-
-  const { account_id, token, url, nameInbox } = req.body;
-
-  if (!account_id || !token || !url) {
-    return res.json({ message: 'error', error: 'Dados inválidos' });
-  }
-
-  try {
-
-    db.exec(`CREATE TABLE IF NOT EXISTS providers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      account_id INTEGER,
-      token TEXT,
-      url TEXT,
-      nameInbox TEXT
-    )`);
-
-    const stmt = db.prepare(`INSERT INTO providers (account_id, token, url, nameInbox) VALUES (?, ?, ?, ?)`);
-    const info = stmt.run(account_id, token, url, nameInbox);
-
-    res.json({ message: 'ok', info });
-
-
-  } catch (error) {
-    res.json({ message: 'error', error });
-  }
-});
-
 app.post('/webhook/:provider', async (req: Request, res: Response) => {
   try {
     const provider = req.params.provider;
