@@ -24,7 +24,7 @@ import { writeFileSync } from "fs";
 import db from "../db";
 import path from "path";
 
-const messages_sent: string[] = [];
+const messages_sent = [];
 
 export const eventChatWoot = async (body: any): Promise<{ message: string }> => {
   if (!body?.conversation || body.private) return { message: 'bot' };
@@ -201,6 +201,8 @@ export const eventCodeChat = async (body: any): Promise<any> => {
 
       const send = await createMessage(accountId, getConversion, bodyMessage, messageType);
 
+      messages_sent.push(send.id); 
+      
       return send;
 
     }
