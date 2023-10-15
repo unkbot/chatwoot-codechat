@@ -1,4 +1,4 @@
-# chatwoot-codechat
+# chatwoot-codechat Deprecated 
 
 Este é um repositório do chatwoot-codechat, um aplicativo que permite integração do Chatwoot com o WhatsApp CodeChat como api de canal de comunicação. Siga as instruções abaixo para fazer o deploy do aplicativo em um ambiente Ubuntu 22.x com Node.js 16.x.
 
